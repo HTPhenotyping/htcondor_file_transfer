@@ -5,7 +5,7 @@ import pytest
 import xfer
 
 
-@pytest.mark.parametrize("size", [10, 10_000, 10_000_000])
+@pytest.mark.parametrize("size", [10, 10000, 10000000])
 def test_hashes_equal_after_copy(tmp_path, size):
     src = tmp_path / "src"
     dest = tmp_path / "dest"
