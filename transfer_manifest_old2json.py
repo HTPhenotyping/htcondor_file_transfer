@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-from pathlib import Path
-import shutil
 import json
 import os
+import shutil
+from pathlib import Path
 
 
 # SYNC_REQUEST /home/wcic/drone_data files_at_source=83682 files_to_transfer=8 bytes_to_transfer=0 files_to_verify=83674 bytes_to_verify=387976805206 timestamp=1596727332.650157
@@ -79,9 +79,7 @@ TOKENS = {
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "old", type=Path, help="Path to old-style transfer_manifest.txt"
-    )
+    parser.add_argument("old", type=Path, help="Path to old-style transfer_manifest.txt")
     args = parser.parse_args()
 
     old = args.old.resolve()
