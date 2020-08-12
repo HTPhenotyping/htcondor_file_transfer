@@ -36,3 +36,18 @@ def test_round_trip_manifest_entries(tmp_path, name, timestamp):
     read_entries = list(entry for entry, _ in xfer.read_manifest(tmp_file))
 
     assert entries == read_entries
+
+
+def test_manifest_comments_and_blank_lines_are_ignored(tmp_path):
+    text = """\
+    FILE {"name": "foobar", "size": 123}
+    # I am a comment
+
+    FILE {"name": "foobar", "size": 123}
+
+    """
+
+    tmp_file = tmp_path / "tmp"
+    tmp_file.write_text(text)
+
+    assert len(list(xfer.read_manifest(tmp_file))) == 2
