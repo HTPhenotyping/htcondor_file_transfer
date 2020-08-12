@@ -11,14 +11,24 @@ import os
 # SYNC_REQUEST {"source_prefix": "/home/jtk/projects/htcondor_file_transfer/src", "files_at_source": 4, "files_to_transfer": 4, "bytes_to_transfer": 10289741842, "files_to_verify": 0, "bytes_to_verify": 0, "timestamp": 1596816337.0116978}
 def sync_request(source_prefix, *args):
     data = {}
-    data['source_prefix'] = source_prefix
+    data["source_prefix"] = source_prefix
     if len(args) != 6:
         raise TypeError(f"Invalid number of SYNC_REQUEST arguments passed: {len(args)}")
     for entry in args:
-        key, val = entry.split('=')
-        if not (key in ['files_at_source', 'files_to_transfer', 'bytes_to_transfer', 'files_to_verify', 'bytes_to_verify', 'timestamp']):
+        key, val = entry.split("=")
+        if not (
+            key
+            in [
+                "files_at_source",
+                "files_to_transfer",
+                "bytes_to_transfer",
+                "files_to_verify",
+                "bytes_to_verify",
+                "timestamp",
+            ]
+        ):
             raise TypeError(f"Invalid key in SYNC_REQUEST arguments: {key}")
-        elif key in ['timestamp']:
+        elif key in ["timestamp"]:
             data[key] = float(val)
         else:
             data[key] = int(val)
@@ -93,7 +103,9 @@ if __name__ == "__main__":
                             json.loads(" ".join(tokens[1:]))
                             f.write(line)
                         except Exception as e:
-                            print(f"Bad line {i+1}, raised {type(e).__name__}: {str(e)}, skipping: {line.rstrip()}")
+                            print(
+                                f"Bad line {i+1}, raised {type(e).__name__}: {str(e)}, skipping: {line.rstrip()}"
+                            )
                             skipped_lines += 1
                     elif len(tokens) == TOKENS[tokens[0]] and not (
                         "{" in "".join(tokens) or "}" in "".join(tokens)
@@ -102,7 +114,9 @@ if __name__ == "__main__":
                             json_line = CONVERT[tokens[0]](*tokens[1:])
                             f.write(json_line)
                         except Exception as e:
-                            print(f"Bad line {i+1}, raised {type(e).__name__}: {str(e)}, skipping: {line.rstrip()}")
+                            print(
+                                f"Bad line {i+1}, raised {type(e).__name__}: {str(e)}, skipping: {line.rstrip()}"
+                            )
                             skipped_lines += 1
                     else:
                         print(f"Bad line {i+1}, skipping: {line.rstrip()}")
