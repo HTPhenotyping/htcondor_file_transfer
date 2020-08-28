@@ -8,10 +8,11 @@ from pathlib import Path
 
 
 # SYNC_REQUEST /home/wcic/drone_data files_at_source=83682 files_to_transfer=8 bytes_to_transfer=0 files_to_verify=83674 bytes_to_verify=387976805206 timestamp=1596727332.650157
-# SYNC_REQUEST {"source_prefix": "/home/jtk/projects/htcondor_file_transfer/src", "files_at_source": 4, "files_to_transfer": 4, "bytes_to_transfer": 10289741842, "files_to_verify": 0, "bytes_to_verify": 0, "timestamp": 1596816337.0116978}
+# SYNC_REQUEST {"direction": "pull", "remote_prefix": "/home/jtk/projects/htcondor_file_transfer/src", "files_at_source": 4, "files_to_transfer": 4, "bytes_to_transfer": 10289741842, "files_to_verify": 0, "bytes_to_verify": 0, "timestamp": 1596816337.0116978}
 def sync_request(source_prefix, *args):
     data = {}
-    data["source_prefix"] = source_prefix
+    data["direction"] = "pull"
+    data["remote_prefix"] = source_prefix
     if len(args) != 6:
         raise TypeError(f"Invalid number of SYNC_REQUEST arguments passed: {len(args)}")
     for entry in args:
