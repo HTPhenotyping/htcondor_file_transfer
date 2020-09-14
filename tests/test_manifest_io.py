@@ -11,7 +11,7 @@ def test_round_trip_manifest_entries(tmp_path, name, timestamp):
     entries = [
         xfer.TransferRequest(name=name, size=123),
         xfer.VerifyRequest(name=name, size=123),
-        xfer.TransferVerified(name=name, size=123, digest="abcd", timestamp=timestamp),
+        xfer.TransferComplete(name=name, size=123, digest="abcd", timestamp=timestamp),
         xfer.SyncRequest(
             direction=xfer.TransferDirection.PULL,
             timestamp=1234,

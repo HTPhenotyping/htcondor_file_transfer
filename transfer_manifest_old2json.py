@@ -54,6 +54,12 @@ def transfer_verified(name, digest, size, timestamp):
     return f"TRANSFER_VERIFIED {json.dumps({'name': name, 'digest': digest, 'size': int(size), 'timestamp': int(timestamp)})}\n"
 
 
+# TRANSFER_VERIFIED {"timestamp": 1593181879, "name": "Arlington_2020/Field 712/20200621_16-13-23/NDVI/IMG_00389.jpg", "digest": "1f2cec0df3017e944e93fa56104dbfc4096a76ea", "size": 2474228}
+# TRANSFER_COMPLETE {"timestamp": 1593181879, "name": "Arlington_2020/Field 712/20200621_16-13-23/NDVI/IMG_00389.jpg", "digest": "1f2cec0df3017e944e93fa56104dbfc4096a76ea", "size": 2474228}
+def transfer_complete(data):
+    return f"TRANSFER_COMPLETE {json.dumps(data)}\n"
+
+
 # SYNC_DONE 1596776915
 # SYNC_DONE {"timestamp": 1596816381.1880395}
 def sync_done(timestamp):
@@ -74,6 +80,7 @@ TOKENS = {
     "TRANSFER_REQUEST": 3,
     "VERIFY_REQUEST": 3,
     "TRANSFER_VERIFIED": 5,
+    "TRANSFER_COMPLETE": 1,
     "SYNC_DONE": 2,
 }
 
@@ -99,7 +106,9 @@ if __name__ == "__main__":
                 elif tokens[0] in TOKENS:
                     if tokens[1].startswith("{") and tokens[-1].endswith("}"):
                         try:
-                            json.loads(" ".join(tokens[1:]))
+                            data = json.loads(" ".join(tokens[1:]))
+                            if tokens[0] == "TRANSFER_VERIFIED":
+                                line = transfer_complete(data)
                             f.write(line)
                         except Exception as e:
                             print(
