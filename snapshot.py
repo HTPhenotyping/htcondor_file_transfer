@@ -1,50 +1,50 @@
 #!/usr/bin/env python3
 """
 Usage:
-  snapshot.py [-v] make <dir>
-  snapshot.py [-v] compare <s1> <s2>
+  snapshot [-v] (make <dir> | compare <s1> <s2>)
 
-Take and compare snapshots of file hierarchies. A snapshot is a JSON object
-recording the path to the root of the file hierarchy and metadata about each
-file under that root. Results are shown on standard out.
+A snapshot records the path to a directory and metadata for each file in
+that directory. Snapshots are compared by checking whether their respective
+directories contain the same files, each with the same metadata.
 
 Options:
-  -v          Log debugging messages to standard error
-  -h, --help  Show this message and exit
+  -h, --help     Show this message and exit
+  -v, --verbose  Log debugging messages to standard error
 """
 
-import contextlib
 import hashlib
 import json
 import logging
 import os
 import stat
 from pathlib import Path
-from typing import Dict, Iterator
+from typing import Dict, Union
 
 import docopt
 
-LOGGING_NAME = "ba_snapshot"
+LOGGING_NAME = "snapshot"
 
-BUFFER_SIZE = 1024 * 1024
+BUFFER_SIZE = 2 ** 20  # 1 MiB
 
 #
 # Type definitions.
 #
 
 FSPath = str
-TypedDict = object  # TODO: Remove this definition with Python >= 3.8
+AnyPath = Union[Path, FSPath]
+TypedDict = object  # TODO: Import from 'typing' with Python >= 3.8
 
 
 class FileMetadata(TypedDict):
     size: int
-    sha512: str
+    sha1_digest: str
 
 
 FileManifest = Dict[FSPath, FileMetadata]
 
 
 class Snapshot(TypedDict):
+    version: str
     root: FSPath
     manifest: FileManifest
 
@@ -52,25 +52,11 @@ class Snapshot(TypedDict):
 ############################################################################
 
 
-@contextlib.contextmanager
-def chdir(path: FSPath) -> Iterator[None]:
+def sha1(path: AnyPath, mode: int) -> str:
     """
-    Implements a context manager for changing the current working directory.
+    Computes the SHA-1 hash for the file at the given path.
     """
-    oldcwd = os.getcwd()
-    try:
-        os.chdir(path)
-        yield
-    finally:
-        os.chdir(oldcwd)
-
-
-def sha512(path: FSPath, mode: int) -> str:
-    """
-    Computes a SHA-512 hash for the file at the given path.
-    """
-    path = os.fspath(path)
-    hash = hashlib.sha512()
+    hash = hashlib.sha1()
 
     if stat.S_ISREG(mode):
         with open(path, "rb") as file:
@@ -79,16 +65,20 @@ def sha512(path: FSPath, mode: int) -> str:
                 if not data:
                     break
                 hash.update(data)
-    elif stat.S_ISLNK(mode):
-        hash.update(bytes(os.readlink(path), "utf-8"))
     else:
-        raise RuntimeError(f"Not a regular file or symlink: {path}")
+        message = f"Not a regular file: {path}"
+
+        log = logging.getLogger(LOGGING_NAME)
+        log.error(message)
+
+        raise RuntimeError(message)
+
     return hash.hexdigest()
 
 
-def make_manifest(root: FSPath) -> FileManifest:
+def make_manifest(root: AnyPath) -> FileManifest:
     """
-    Computes the file manifest for the file hierarchy rooted at the given path.
+    Computes the file manifest for the given directory.
     """
     manifest: FileManifest = {}
     log = logging.getLogger(LOGGING_NAME)
@@ -97,21 +87,23 @@ def make_manifest(root: FSPath) -> FileManifest:
         dirnames[:] = sorted(dirnames)
 
         for filename in sorted(filenames):
-            path = os.fspath(Path(dirpath) / filename)
-            stat = os.lstat(path)
+            path = Path(dirpath) / filename
 
             log.info(f"PATH {path}")
 
-            manifest[path] = {
-                "size": stat.st_size,
-                "sha512": sha512(path, stat.st_mode),
+            st_info = path.lstat()
+            rel_path = os.fspath(path.relative_to(root))
+
+            manifest[rel_path] = {
+                "size": st_info.st_size,
+                "sha1_digest": sha1(path, st_info.st_mode),
             }
     return manifest
 
 
 def compare_snapshots(s1: Snapshot, s2: Snapshot) -> None:
     """
-    Prints any differences found between the two snapshots.
+    Prints any differences found between the two given snapshots.
     """
     r1 = s1["root"]
     r2 = s2["root"]
@@ -142,21 +134,22 @@ def main() -> None:
     """
     args = docopt.docopt(__doc__)
 
-    if args["-v"]:
+    if args["--verbose"]:
         logging.basicConfig(
-            level=logging.DEBUG, format="[%(asctime)s] %(levelname)s %(message)s",
+            level=logging.DEBUG, format="[%(asctime)s] %(levelname)s %(name)s %(message)s",
         )
 
     if args["make"]:
-        root = args["<dir>"]
+        dir = args["<dir>"]
 
-        with chdir(root):
-            manifest = make_manifest(".")
+        root = os.fspath(Path(dir).resolve())
 
         snapshot: Snapshot = {
-            "root": os.fspath(Path(root).resolve()),
-            "manifest": manifest,
+            "version": "2",
+            "root": root,
+            "manifest": make_manifest(root),
         }
+
         print(json.dumps(snapshot, indent=2, sort_keys=True))
 
     if args["compare"]:
