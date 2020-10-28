@@ -8,6 +8,10 @@ profile = "black"
 line_length = 100
 known_third_party = ["classad", "docopt", "htcondor", "pytest"]
 
+[tool.pylint."messages control"]
+max-line-length = 100
+disable = "C0103,C0115,C0116"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 console_output_style = "count"
